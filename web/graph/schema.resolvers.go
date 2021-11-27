@@ -6,13 +6,19 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/posts"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
-	"github.com/os3224/final-project-0b5a2e16-babysuse/webgraph/model"
+	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/model"
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePost) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented"))
+	var post posts.Post
+	post.Text = input.Text
+	post.User.ID = input.AuthorID
+	postID := post.Save()
+	return &model.Post{ID: strconv.FormatInt(postID, 10), Text: post.Text}, nil
 }
 
 func (r *mutationResolver) Signup(ctx context.Context, input *model.Signup) (string, error) {

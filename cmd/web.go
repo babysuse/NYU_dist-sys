@@ -7,6 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	database "github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/db/migrations/mysql"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
 )
@@ -18,6 +19,9 @@ func main() {
 	if port == "" {
 		port = defaultPort
 	}
+
+	database.InitDB()
+	database.Migrate()
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 
