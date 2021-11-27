@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/jwt"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/posts"
+	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/users"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/model"
 )
@@ -22,15 +24,43 @@ func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePos
 }
 
 func (r *mutationResolver) Signup(ctx context.Context, input *model.Signup) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	var user users.User
+	user.Username = input.Username
+	user.Password = input.Password
+	user.Create()
+	token, err := jwt.GenerateToken(user.Username)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func (r *mutationResolver) Login(ctx context.Context, input *model.Login) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	var user users.User
+	user.Username = input.Username
+	user.Password = input.Password
+	correct := user.Authenticate()
+	if !correct {
+		return "", &users.WrongAuth{}
+	}
+
+	token, err := jwt.GenerateToken(user.Username)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func (r *mutationResolver) RefreshToken(ctx context.Context, input model.RefreshToken) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	username, err := jwt.ParseToken(input.Token)
+	if err != nil {
+		return "", fmt.Errorf("Access denied")
+	}
+	token, err := jwt.GenerateToken(username)
+	if err != nil {
+		return "", err
+	}
+	return token, err
 }
 
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
