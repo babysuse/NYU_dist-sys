@@ -8,20 +8,13 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/auth"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/jwt"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/posts"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/users"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/model"
 )
-
-func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePost) (*model.Post, error) {
-	var post posts.Post
-	post.Text = input.Text
-	post.User.ID = input.AuthorID
-	postID := post.Save()
-	return &model.Post{ID: strconv.FormatInt(postID, 10), Text: post.Text}, nil
-}
 
 func (r *mutationResolver) Signup(ctx context.Context, input *model.Signup) (string, error) {
 	var user users.User
@@ -32,6 +25,7 @@ func (r *mutationResolver) Signup(ctx context.Context, input *model.Signup) (str
 	if err != nil {
 		return "", err
 	}
+	fmt.Printf("New user: %s\n", user.Username)
 	return token, nil
 }
 
@@ -43,6 +37,7 @@ func (r *mutationResolver) Login(ctx context.Context, input *model.Login) (strin
 	if !correct {
 		return "", &users.WrongAuth{}
 	}
+	fmt.Printf("%s logged in\n", user.Username)
 
 	token, err := jwt.GenerateToken(user.Username)
 	if err != nil {
@@ -63,15 +58,36 @@ func (r *mutationResolver) RefreshToken(ctx context.Context, input model.Refresh
 	return token, err
 }
 
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
-	var posts []*model.Post
-	dummyPost := model.Post{
-		ID:     "postid",
-		Text:   "content",
-		Author: &model.User{Name: "babysuse"},
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePost) (*model.Post, error) {
+	user := auth.ForContext(ctx)
+	if user == nil {
+		return &model.Post{}, fmt.Errorf("Access denied")
 	}
-	posts = append(posts, &dummyPost)
-	return posts, nil
+	var post posts.Post
+	post.User = user
+	post.Text = input.Text
+	postID := post.Save()
+	return &model.Post{ID: strconv.FormatInt(postID, 10), Text: post.Text}, nil
+}
+
+func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	user := auth.ForContext(ctx)
+	var gqlPosts []*model.Post
+	if user == nil {
+		return gqlPosts, fmt.Errorf("Access denied")
+	}
+
+	var dbPosts []posts.Post
+	dbPosts = posts.GetAll(user.ID)
+	for _, post := range dbPosts {
+		gqlUser := &model.User{ID: post.User.ID, Name: post.User.Username}
+		gqlPosts = append(gqlPosts, &model.Post{
+			ID:     post.ID,
+			Text:   post.Text,
+			Author: gqlUser,
+		})
+	}
+	return gqlPosts, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

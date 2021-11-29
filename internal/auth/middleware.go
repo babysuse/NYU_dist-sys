@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -16,16 +17,16 @@ var userContext = contextKey("user")
 func Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			header := r.Header.Get("Authorization")
+			tokenStr := r.Header.Get("Authorization")
 
+			fmt.Printf("token: %s\n", tokenStr)
 			// allow unauthenticated user
-			if header == "" {
+			if tokenStr == "" {
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			// validate jwt token
-			tokenStr := header
 			username, err := jwt.ParseToken(tokenStr)
 			if err != nil {
 				http.Error(w, "Invalid cookie", http.StatusForbidden)
@@ -43,6 +44,7 @@ func Middleware() func(http.Handler) http.Handler {
 			// put it in context
 			user.ID = strconv.Itoa(id)
 			ctx := context.WithValue(r.Context(), userContext, &user)
+			fmt.Printf("%s logged in\n", user.Username)
 
 			// and call the next with our new context
 			r = r.WithContext(ctx)
@@ -51,6 +53,7 @@ func Middleware() func(http.Handler) http.Handler {
 	}
 }
 
+// find user from context
 func ForContext(ctx context.Context) *users.User {
 	raw, _ := ctx.Value(userContext).(*users.User)
 	return raw
