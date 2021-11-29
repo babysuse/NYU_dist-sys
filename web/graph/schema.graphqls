@@ -6,7 +6,6 @@ type Post {
 
 input CreatePost {
   text: String!
-  authorId: String!
 }
 
 type Query {
@@ -32,9 +31,16 @@ input RefreshToken {
     token: String!
 }
 
+input Followee {
+    userid: String!
+}
+
 type Mutation {
     createPost(input: CreatePost!): Post!
     signup(input: Signup): String!
     login(input: Login): String!
     refreshToken(input: RefreshToken!): String!
+
+    follow(input: Followee): String!
+    unfollow(input: Followee): String!
 }

@@ -45,9 +45,11 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Mutation struct {
 		CreatePost   func(childComplexity int, input model.CreatePost) int
+		Follow       func(childComplexity int, input *model.Followee) int
 		Login        func(childComplexity int, input *model.Login) int
 		RefreshToken func(childComplexity int, input model.RefreshToken) int
 		Signup       func(childComplexity int, input *model.Signup) int
+		Unfollow     func(childComplexity int, input *model.Followee) int
 	}
 
 	Post struct {
@@ -71,6 +73,8 @@ type MutationResolver interface {
 	Signup(ctx context.Context, input *model.Signup) (string, error)
 	Login(ctx context.Context, input *model.Login) (string, error)
 	RefreshToken(ctx context.Context, input model.RefreshToken) (string, error)
+	Follow(ctx context.Context, input *model.Followee) (string, error)
+	Unfollow(ctx context.Context, input *model.Followee) (string, error)
 }
 type QueryResolver interface {
 	Posts(ctx context.Context) ([]*model.Post, error)
@@ -102,6 +106,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreatePost(childComplexity, args["input"].(model.CreatePost)), true
+
+	case "Mutation.follow":
+		if e.complexity.Mutation.Follow == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_follow_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Follow(childComplexity, args["input"].(*model.Followee)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -138,6 +154,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Signup(childComplexity, args["input"].(*model.Signup)), true
+
+	case "Mutation.unfollow":
+		if e.complexity.Mutation.Unfollow == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unfollow_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Unfollow(childComplexity, args["input"].(*model.Followee)), true
 
 	case "Post.author":
 		if e.complexity.Post.Author == nil {
@@ -253,7 +281,6 @@ var sources = []*ast.Source{
 
 input CreatePost {
   text: String!
-  authorId: String!
 }
 
 type Query {
@@ -279,11 +306,18 @@ input RefreshToken {
     token: String!
 }
 
+input Followee {
+    userid: String!
+}
+
 type Mutation {
     createPost(input: CreatePost!): Post!
     signup(input: Signup): String!
     login(input: Login): String!
     refreshToken(input: RefreshToken!): String!
+
+    follow(input: Followee): String!
+    unfollow(input: Followee): String!
 }
 `, BuiltIn: false},
 }
@@ -299,7 +333,22 @@ func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, 
 	var arg0 model.CreatePost
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreatePost2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐCreatePost(ctx, tmp)
+		arg0, err = ec.unmarshalNCreatePost2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐCreatePost(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_follow_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.Followee
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOFollowee2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐFollowee(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -314,7 +363,7 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	var arg0 *model.Login
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOLogin2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐLogin(ctx, tmp)
+		arg0, err = ec.unmarshalOLogin2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐLogin(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +378,7 @@ func (ec *executionContext) field_Mutation_refreshToken_args(ctx context.Context
 	var arg0 model.RefreshToken
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNRefreshToken2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐRefreshToken(ctx, tmp)
+		arg0, err = ec.unmarshalNRefreshToken2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐRefreshToken(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -344,7 +393,22 @@ func (ec *executionContext) field_Mutation_signup_args(ctx context.Context, rawA
 	var arg0 *model.Signup
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOSignup2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐSignup(ctx, tmp)
+		arg0, err = ec.unmarshalOSignup2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐSignup(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unfollow_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.Followee
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOFollowee2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐFollowee(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +509,7 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	}
 	res := resTmp.(*model.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_signup(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -574,6 +638,90 @@ func (ec *executionContext) _Mutation_refreshToken(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_follow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_follow_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Follow(rctx, args["input"].(*model.Followee))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_unfollow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unfollow_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Unfollow(rctx, args["input"].(*model.Followee))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -676,7 +824,7 @@ func (ec *executionContext) _Post_author(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -711,7 +859,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.([]*model.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1994,11 +2142,26 @@ func (ec *executionContext) unmarshalInputCreatePost(ctx context.Context, obj in
 			if err != nil {
 				return it, err
 			}
-		case "authorId":
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFollowee(ctx context.Context, obj interface{}) (model.Followee, error) {
+	var it model.Followee
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "userid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorId"))
-			it.AuthorID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userid"))
+			it.Userid, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2133,6 +2296,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "refreshToken":
 			out.Values[i] = ec._Mutation_refreshToken(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "follow":
+			out.Values[i] = ec._Mutation_follow(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unfollow":
+			out.Values[i] = ec._Mutation_unfollow(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2525,7 +2698,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCreatePost2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐCreatePost(ctx context.Context, v interface{}) (model.CreatePost, error) {
+func (ec *executionContext) unmarshalNCreatePost2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐCreatePost(ctx context.Context, v interface{}) (model.CreatePost, error) {
 	res, err := ec.unmarshalInputCreatePost(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -2545,11 +2718,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNPost2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
 	return ec._Post(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2573,7 +2746,7 @@ func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋos3224ᚋfinalᚑp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2593,7 +2766,7 @@ func (ec *executionContext) marshalNPost2ᚕᚖgithubᚗcomᚋos3224ᚋfinalᚑp
 	return ret
 }
 
-func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2603,7 +2776,7 @@ func (ec *executionContext) marshalNPost2ᚖgithubᚗcomᚋos3224ᚋfinalᚑproj
 	return ec._Post(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRefreshToken2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐRefreshToken(ctx context.Context, v interface{}) (model.RefreshToken, error) {
+func (ec *executionContext) unmarshalNRefreshToken2githubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐRefreshToken(ctx context.Context, v interface{}) (model.RefreshToken, error) {
 	res, err := ec.unmarshalInputRefreshToken(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -2623,7 +2796,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -2914,7 +3087,15 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) unmarshalOLogin2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐLogin(ctx context.Context, v interface{}) (*model.Login, error) {
+func (ec *executionContext) unmarshalOFollowee2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐFollowee(ctx context.Context, v interface{}) (*model.Followee, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputFollowee(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLogin2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐLogin(ctx context.Context, v interface{}) (*model.Login, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -2922,7 +3103,7 @@ func (ec *executionContext) unmarshalOLogin2ᚖgithubᚗcomᚋos3224ᚋfinalᚑp
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOSignup2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋgraphᚋmodelᚐSignup(ctx context.Context, v interface{}) (*model.Signup, error) {
+func (ec *executionContext) unmarshalOSignup2ᚖgithubᚗcomᚋos3224ᚋfinalᚑprojectᚑ0b5a2e16ᚑbabysuseᚋwebᚋgraphᚋmodelᚐSignup(ctx context.Context, v interface{}) (*model.Signup, error) {
 	if v == nil {
 		return nil, nil
 	}

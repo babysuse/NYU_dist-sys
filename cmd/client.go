@@ -14,7 +14,7 @@ var token string
 func TestCreateUser() string {
 	request := graphql.NewRequest(`
 		mutation {
-			signup(input: {username: "test", password: "test123"})
+			signup(input: {username: "user", password: "passwd"})
 		}
 	`)
 
@@ -32,7 +32,7 @@ func UserLogin() string {
 	client := graphql.NewClient("http://localhost:8080/query")
 	request := graphql.NewRequest(`
 		mutation {
-			login(input: {username: "test", password: "test123"})
+			login(input: {username: "user", password: "passwd"})
 		}
 	`)
 
@@ -45,11 +45,46 @@ func UserLogin() string {
 	return response.Login
 }
 
+func TestFollow() string {
+	request := graphql.NewRequest(`
+		mutation {
+			follow(input: {userid: "12"})
+		}
+	`)
+	request.Header.Set("Authorization", token)
+
+	var response struct {
+		Follow string `json:"follow"`
+	}
+	if err := client.Run(context.Background(), request, &response); err != nil {
+		panic(err)
+	}
+	return response.Follow
+}
+
+func TestUnfollow() string {
+	request := graphql.NewRequest(`
+		mutation {
+			unfollow(input: {userid: "12"})
+		}
+	`)
+	request.Header.Set("Authorization", token)
+
+	var response struct {
+		Unfollow string `json:"unfollow"`
+	}
+	if err := client.Run(context.Background(), request, &response); err != nil {
+		panic(err)
+	}
+	return response.Unfollow
+}
+
+//func TestCreatePost(t *testing.T) {
 //func TestCreatePost(t *testing.T) {
 func TestCreatePost() {
 	request := graphql.NewRequest(`
 		mutation {
-			createPost(input: {text: "new content created!!", authorId: "..."}) {
+			createPost(input: {text: "new content created!!"}) {
 				id,
 				text,
 			}
@@ -108,9 +143,11 @@ func TestPosts() {
 }
 
 func main() {
-	//TestCreateUser()
+	//token = TestCreateUser()
 	token = UserLogin()
 	println(token)
-	TestCreatePost()
-	//TestPosts()
+	//TestFollow()
+	//TestUnfollow()
+	//TestCreatePost()
+	TestPosts()
 }

@@ -3,8 +3,11 @@
 package model
 
 type CreatePost struct {
-	Text     string `json:"text"`
-	AuthorID string `json:"authorId"`
+	Text string `json:"text"`
+}
+
+type Followee struct {
+	Userid string `json:"userid"`
 }
 
 type Login struct {

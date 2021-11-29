@@ -73,3 +73,27 @@ func GetUserIdByUsername(username string) (int, error) {
 	}
 	return id, nil
 }
+
+func (user *User) Follow(followeeID string) {
+	stmt, err := database.DB.Prepare("INSERT INTO Following(UserID, FolloweeID) VALUES(?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = stmt.Exec(user.ID, followeeID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (user *User) Unfollow(followeeID string) {
+	stmt, err := database.DB.Prepare("DELETE FROM Following WHERE UserID = ? AND FolloweeID = ?")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = stmt.Exec(user.ID, followeeID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
