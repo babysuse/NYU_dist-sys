@@ -121,6 +121,7 @@ func TestPosts() {
 			}
 		}
 	`)
+	request.Header.Set("Authorization", token)
 
 	var response struct {
 		Posts []struct {
@@ -147,7 +148,7 @@ func main() {
 	token = UserLogin()
 	println(token)
 	//TestFollow()
-	//TestUnfollow()
+	TestUnfollow()
 	//TestCreatePost()
 	TestPosts()
 }

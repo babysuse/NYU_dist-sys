@@ -94,16 +94,22 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	if user == nil {
 		return gqlPosts, fmt.Errorf("Access denied")
 	}
+	// get all followee (including self)
+	followees := user.GetFollowee()
+	followees = append(followees, *user)
 
+	// get posts from each followee (including self)
 	var dbPosts []posts.Post
-	dbPosts = posts.GetAll(user.ID)
-	for _, post := range dbPosts {
-		gqlUser := &model.User{ID: post.User.ID, Name: post.User.Username}
-		gqlPosts = append(gqlPosts, &model.Post{
-			ID:     post.ID,
-			Text:   post.Text,
-			Author: gqlUser,
-		})
+	for _, user := range followees {
+		dbPosts = posts.GetAll(user.ID)
+		for _, post := range dbPosts {
+			gqlUser := &model.User{ID: post.User.ID, Name: post.User.Username}
+			gqlPosts = append(gqlPosts, &model.Post{
+				ID:     post.ID,
+				Text:   post.Text,
+				Author: gqlUser,
+			})
+		}
 	}
 	return gqlPosts, nil
 }

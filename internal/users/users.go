@@ -97,3 +97,25 @@ func (user *User) Unfollow(followeeID string) {
 		return
 	}
 }
+
+func (user *User) GetFollowee() []User {
+	rows, err := database.DB.Query(`
+		SELECT U.ID, U.Username
+		FROM Following F join Users U ON F.FolloweeID = U.ID
+		WHERE F.UserID = ?`, user.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	var followees []User
+	for rows.Next() {
+		var followee User
+		err := rows.Scan(&followee.ID, &followee.Username)
+		if err != nil {
+			log.Fatal(err)
+		}
+		followees = append(followees, followee)
+	}
+	return followees
+}
