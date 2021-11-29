@@ -10,8 +10,7 @@ import (
 var client = graphql.NewClient("http://localhost:8080/query")
 var token string
 
-//func TestCreateUser(t *testing.T) {
-func TestCreateUser() string {
+func CreateUser() string {
 	request := graphql.NewRequest(`
 		mutation {
 			signup(input: {username: "user", password: "passwd"})
@@ -45,7 +44,7 @@ func UserLogin() string {
 	return response.Login
 }
 
-func TestFollow() string {
+func Follow() string {
 	request := graphql.NewRequest(`
 		mutation {
 			follow(input: {userid: "12"})
@@ -62,7 +61,7 @@ func TestFollow() string {
 	return response.Follow
 }
 
-func TestUnfollow() string {
+func Unfollow() string {
 	request := graphql.NewRequest(`
 		mutation {
 			unfollow(input: {userid: "12"})
@@ -79,9 +78,7 @@ func TestUnfollow() string {
 	return response.Unfollow
 }
 
-//func TestCreatePost(t *testing.T) {
-//func TestCreatePost(t *testing.T) {
-func TestCreatePost() {
+func CreatePost() {
 	request := graphql.NewRequest(`
 		mutation {
 			createPost(input: {text: "new content created!!"}) {
@@ -109,7 +106,7 @@ func TestCreatePost() {
 }
 
 //func TestPosts(t *testing.T) {
-func TestPosts() {
+func Posts() {
 	request := graphql.NewRequest(`
 		query {
 			posts {
@@ -136,19 +133,14 @@ func TestPosts() {
 		panic(err)
 	}
 	fmt.Printf("%v\n", response)
-	//got := response.Posts[0].Author.Name
-	//want := "babysuse"
-	//if got != want {
-	//t.Errorf("Expect %q, got %q", want, got)
-	//}
 }
 
 func main() {
-	//token = TestCreateUser()
+	//token = CreateUser()
 	token = UserLogin()
 	println(token)
-	//TestFollow()
-	TestUnfollow()
-	//TestCreatePost()
-	TestPosts()
+	Follow()
+	//Unfollow()
+	//CreatePost()
+	Posts()
 }
