@@ -27,12 +27,8 @@ func main() {
 	database.InitDB()
 	database.Migrate()
 
-	//mux := http.NewServeMux()
 	middleware := auth.Middleware()
 	server := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-	//mux.Handle("/query", middleware(server))
-	//mux.Handle("/query", server)
-	//http.Handle("/", playground.Handler("GraphQL server", "/query"))
 	http.Handle("/query", middleware(server))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL server", port)
