@@ -1,0 +1,31 @@
+syntax = "proto3";
+option go_package = "github.com/os3224/final-project-0b5a2e16-babysuse/web/user/pb";
+
+package pb;
+
+service UserService {
+    rpc Follow (FollowRequest) returns (FollowReply) {}
+    rpc Unfollow (FollowRequest) returns (FollowReply) {}
+    rpc GetFollowee (GetFolloweeRequest) returns (GetFolloweeResponse) {}
+}
+
+message FollowRequest {
+    string username = 1;
+    string followeename = 2;
+}
+
+message FollowReply {
+    string result = 1;
+}
+
+message GetFolloweeRequest {
+    string username = 1;
+}
+
+message GetFolloweeResponse {
+    repeated User followees = 1;
+}
+
+message User {
+    string username = 1;
+}
