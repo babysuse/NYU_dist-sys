@@ -7,30 +7,42 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/auth"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/jwt"
-	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/posts"
-	autherr "github.com/os3224/final-project-0b5a2e16-babysuse/web/account/autherr"
+	"github.com/os3224/final-project-0b5a2e16-babysuse/web/account/autherr"
 	accountpb "github.com/os3224/final-project-0b5a2e16-babysuse/web/account/pb"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/model"
+	postpb "github.com/os3224/final-project-0b5a2e16-babysuse/web/post/pb"
 	userpb "github.com/os3224/final-project-0b5a2e16-babysuse/web/user/pb"
 	"google.golang.org/grpc"
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePost) (*model.Post, error) {
+	// authenticate user
 	user := auth.ForContext(ctx)
 	if user == nil {
 		return &model.Post{}, fmt.Errorf("Access denied")
 	}
-	var post posts.Post
-	post.User = user
-	post.Text = input.Text
-	postID := post.Save()
-	return &model.Post{ID: strconv.FormatInt(postID, 10), Text: post.Text}, nil
+
+	// set up RPC client
+	conn, err := grpc.Dial(PostSrvAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+	client := postpb.NewPostServiceClient(conn)
+
+	// contact RPC server
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	resp, err := client.CreatePost(ctx, &postpb.CreatePostRequest{Text: input.Text, Author: user.Username})
+	if err != nil {
+		log.Fatalf("failed to create post: %v", err)
+	}
+	return &model.Post{ID: resp.Post.ID, Text: resp.Post.Text}, nil
 }
 
 func (r *mutationResolver) Signup(ctx context.Context, input *model.Signup) (string, error) {
@@ -87,7 +99,7 @@ func (r *mutationResolver) RefreshToken(ctx context.Context, input model.Refresh
 	return token, err
 }
 
-func (r *mutationResolver) Follow(ctx context.Context, input *model.Followee) (string, error) {
+func (r *mutationResolver) Follow(ctx context.Context, input *model.FolloweeInput) (string, error) {
 	// authenticate user
 	user := auth.ForContext(ctx)
 	if user == nil {
@@ -112,7 +124,7 @@ func (r *mutationResolver) Follow(ctx context.Context, input *model.Followee) (s
 	return "Followed", nil
 }
 
-func (r *mutationResolver) Unfollow(ctx context.Context, input *model.Followee) (string, error) {
+func (r *mutationResolver) Unfollow(ctx context.Context, input *model.FolloweeInput) (string, error) {
 	// authenticate user
 	user := auth.ForContext(ctx)
 	if user == nil {
@@ -137,27 +149,74 @@ func (r *mutationResolver) Unfollow(ctx context.Context, input *model.Followee) 
 	return "Unfollowed", nil
 }
 
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+func (r *queryResolver) Getfollowee(ctx context.Context) ([]*model.Followee, error) {
+	// authenticate user
 	user := auth.ForContext(ctx)
-	var gqlPosts []*model.Post
 	if user == nil {
-		return gqlPosts, fmt.Errorf("Access denied")
+		return []*model.Followee{}, fmt.Errorf("Access denied")
 	}
+
+	// set up RPC client
+	conn, err := grpc.Dial(UserSrvAddr, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+	client := userpb.NewUserServiceClient(conn)
+
+	// contact RPC server
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	resp, err := client.GetFollowee(ctx, &userpb.GetFolloweeRequest{Username: user.Username})
+	if err != nil {
+		log.Fatalf("failed to get followee: %v", err)
+	}
+
+	// extract data
+	var followees []*model.Followee
+	for _, followee := range resp.Followees {
+		followees = append(followees, &model.Followee{Username: followee.Username})
+	}
+	return followees, nil
+}
+
+func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+	// authenticate user
+	user := auth.ForContext(ctx)
+	if user == nil {
+		return []*model.Post{}, fmt.Errorf("Access denied")
+	}
+
 	// get all followee (including self)
-	//followees := user.GetFollowee()
-	followees := []accountpb.Account{}
-	followees = append(followees, *user)
+	followees, err := r.Getfollowee(ctx)
+	followees = append(followees, &model.Followee{Username: user.Username})
+	if err != nil {
+		log.Fatalf("failed to get followee: %v", err)
+	}
+
+	// set up RPC client
+	conn, err := grpc.Dial(PostSrvAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
+	if err != nil {
+		log.Fatalf("failed to dial: %v", err)
+	}
+	defer conn.Close()
+	client := postpb.NewPostServiceClient(conn)
 
 	// get posts from each followee (including self)
-	var dbPosts []posts.Post
+	var gqlPosts []*model.Post
 	for _, user := range followees {
-		dbPosts = posts.GetAll(user.Username)
-		for _, post := range dbPosts {
-			gqlUser := &model.User{ID: post.User.ID, Name: post.User.Username}
+		// contact RPC server
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+		resp, err := client.FollowPosts(ctx, &postpb.PostsRequest{Follower: user.Username})
+		if err != nil {
+			log.Fatalf("failed to follow posts: %v", err)
+		}
+		for _, post := range resp.Posts {
 			gqlPosts = append(gqlPosts, &model.Post{
 				ID:     post.ID,
 				Text:   post.Text,
-				Author: gqlUser,
+				Author: &model.User{Name: post.Author},
 			})
 		}
 	}
@@ -182,4 +241,5 @@ type queryResolver struct{ *Resolver }
 const (
 	AccountSrvAddr = "localhost:16018"
 	UserSrvAddr    = "localhost:16028"
+	PostSrvAddr    = "localhost:16038"
 )

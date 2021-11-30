@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS Posts(
     ID INT NOT NULL UNIQUE AUTO_INCREMENT,
     Text VARCHAR (2048) ,
-    AuthorID INT,
-    FOREIGN KEY (AuthorID) REFERENCES Users(ID) ,
+    Author VARCHAR(128),
+    FOREIGN KEY (Author) REFERENCES Users(Username),
     PRIMARY KEY (ID)
 )

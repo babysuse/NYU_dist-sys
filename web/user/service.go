@@ -54,16 +54,16 @@ func (srv *Server) GetFollowee(ctx context.Context, req *pb.GetFolloweeRequest) 
 	}
 	defer rows.Close()
 
-	var response pb.GetFolloweeResponse
+	var resp pb.GetFolloweeResponse
 	for rows.Next() {
 		var followee pb.User
 		err := rows.Scan(&followee.Username)
 		if err != nil {
 			log.Fatal(err)
 		}
-		response.Followees = append(response.Followees, &followee)
+		resp.Followees = append(resp.Followees, &followee)
 	}
-	return &response, nil
+	return &resp, nil
 }
 
 func NewUserServiceServer() {

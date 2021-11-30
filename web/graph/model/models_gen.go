@@ -10,6 +10,10 @@ type Followee struct {
 	Username string `json:"username"`
 }
 
+type FolloweeInput struct {
+	Username string `json:"username"`
+}
+
 type Login struct {
 	Username string `json:"username"`
 	Password string `json:"password"`

@@ -15,6 +15,7 @@ import (
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/account"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
+	"github.com/os3224/final-project-0b5a2e16-babysuse/web/post"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/user"
 )
 
@@ -33,6 +34,7 @@ func main() {
 	// set up RPC server
 	account.NewAccountServiceServer()
 	user.NewUserServiceServer()
+	post.NewPostServiceServer()
 
 	// set up web server
 	middleware := auth.Middleware()
