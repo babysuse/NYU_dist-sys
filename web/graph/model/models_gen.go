@@ -7,7 +7,7 @@ type CreatePost struct {
 }
 
 type Followee struct {
-	Userid string `json:"userid"`
+	Username string `json:"username"`
 }
 
 type Login struct {

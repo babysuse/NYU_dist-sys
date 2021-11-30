@@ -307,7 +307,7 @@ input RefreshToken {
 }
 
 input Followee {
-    userid: String!
+    username: String!
 }
 
 type Mutation {
@@ -2157,11 +2157,11 @@ func (ec *executionContext) unmarshalInputFollowee(ctx context.Context, obj inte
 
 	for k, v := range asMap {
 		switch k {
-		case "userid":
+		case "username":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userid"))
-			it.Userid, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

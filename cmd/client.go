@@ -3,17 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/machinebox/graphql"
 )
 
-var client = graphql.NewClient("http://localhost:8080/query")
+var client = graphql.NewClient("http://localhost:16008/query")
 var token string
 
+// user:passwd
+// test:test123
+// follower:follower
 func CreateUser() string {
 	request := graphql.NewRequest(`
 		mutation {
-			signup(input: {username: "user", password: "passwd"})
+			signup(input: {username: "follower", password: "follower"})
 		}
 	`)
 
@@ -28,10 +32,10 @@ func CreateUser() string {
 }
 
 func UserLogin() string {
-	client := graphql.NewClient("http://localhost:8080/query")
+	//login(input: {username: "user", password: "passwd"})
 	request := graphql.NewRequest(`
 		mutation {
-			login(input: {username: "user", password: "passwd"})
+			login(input: {username: "follower", password: "follower"})
 		}
 	`)
 
@@ -39,7 +43,7 @@ func UserLogin() string {
 		Login string `json:"login"`
 	}
 	if err := client.Run(context.Background(), request, &response); err != nil {
-		panic(err)
+		log.Fatalf("fail to login: %v", err)
 	}
 	return response.Login
 }
@@ -47,7 +51,7 @@ func UserLogin() string {
 func Follow() string {
 	request := graphql.NewRequest(`
 		mutation {
-			follow(input: {userid: "12"})
+			follow(input: {username: "test"})
 		}
 	`)
 	request.Header.Set("Authorization", token)
@@ -64,7 +68,7 @@ func Follow() string {
 func Unfollow() string {
 	request := graphql.NewRequest(`
 		mutation {
-			unfollow(input: {userid: "12"})
+			unfollow(input: {username: "user"})
 		}
 	`)
 	request.Header.Set("Authorization", token)
@@ -139,8 +143,8 @@ func main() {
 	//token = CreateUser()
 	token = UserLogin()
 	println(token)
-	Follow()
 	//Unfollow()
+	Follow()
 	//CreatePost()
-	Posts()
+	//Posts()
 }

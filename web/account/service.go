@@ -22,8 +22,6 @@ type Server struct {
 	pb.UnimplementedAccountServiceServer
 }
 
-type AccountService struct{}
-
 func (srv *Server) Signup(ctx context.Context, acc *pb.Account) (*pb.Token, error) {
 	// prepare SQL
 	statement, err := database.DB.Prepare("INSERT INTO Users(Username, Password) VALUES(?, ?)")

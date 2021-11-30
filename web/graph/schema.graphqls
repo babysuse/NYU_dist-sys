@@ -32,7 +32,7 @@ input RefreshToken {
 }
 
 input Followee {
-    userid: String!
+    username: String!
 }
 
 type Mutation {

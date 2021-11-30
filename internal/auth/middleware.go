@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/jwt"
-	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/users"
+	"github.com/os3224/final-project-0b5a2e16-babysuse/web/account/pb"
 )
 
 type contextKey string
@@ -34,15 +33,15 @@ func Middleware() func(http.Handler) http.Handler {
 			}
 
 			// get the user from the database
-			user := users.User{Username: username}
-			id, err := users.GetUserIdByUsername(username)
+			user := pb.Account{Username: username}
+			//id, err := account.GetUserIdByUsername(username)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			// put it in context
-			user.ID = strconv.Itoa(id)
+			//user.ID = strconv.Itoa(id)
 			ctx := context.WithValue(r.Context(), userContext, &user)
 			fmt.Printf("%s logged in\n", user.Username)
 
@@ -54,7 +53,7 @@ func Middleware() func(http.Handler) http.Handler {
 }
 
 // find user from context
-func ForContext(ctx context.Context) *users.User {
-	raw, _ := ctx.Value(userContext).(*users.User)
+func ForContext(ctx context.Context) *pb.Account {
+	raw, _ := ctx.Value(userContext).(*pb.Account)
 	return raw
 }
