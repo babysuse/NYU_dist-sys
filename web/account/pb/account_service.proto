@@ -1,0 +1,19 @@
+syntax = "proto3";
+option go_package = "github.com/os3224/final-project-0b5a2e16-babysuse/web/account/pb";
+
+package pb;
+
+service AccountService {
+    rpc Signup (Account) returns (Token) {}
+    rpc Login (Account) returns (Token) {}
+}
+
+message Account {
+    string id = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message Token {
+    string token = 1;
+}
