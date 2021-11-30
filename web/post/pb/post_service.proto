@@ -1,0 +1,32 @@
+syntax = "proto3";
+option go_package = "github.com/os3224/final-project-0b5a2e16-babysuse/web/post/pb";
+
+package pb;
+
+service PostService {
+    rpc CreatePost (CreatePostRequest) returns (CreatePostResponse) {}
+    rpc FollowPosts (PostsRequest) returns (PostsResponse) {}
+}
+
+message CreatePostRequest {
+    string Text = 1;
+    string Author = 2;
+}
+
+message CreatePostResponse {
+    Post post = 1;
+}
+
+message PostsRequest {
+    string follower = 1;
+}
+
+message PostsResponse {
+    repeated Post posts = 1;
+}
+
+message Post {
+    string ID = 1;
+    string Text = 2;
+    string author = 3;
+}
