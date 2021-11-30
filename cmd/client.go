@@ -85,7 +85,7 @@ func Unfollow() string {
 func CreatePost() {
 	request := graphql.NewRequest(`
 		mutation {
-			createPost(input: {text: "new content created!!"}) {
+			createPost(input: {text: "Created by user"}) {
 				id,
 				text,
 			}
@@ -144,7 +144,7 @@ func main() {
 	token = UserLogin()
 	println(token)
 	//Unfollow()
-	Follow()
+	//Follow()
 	//CreatePost()
-	//Posts()
+	Posts()
 }
