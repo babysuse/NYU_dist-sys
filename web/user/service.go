@@ -32,7 +32,7 @@ func (srv *Server) Follow(ctx context.Context, req *pb.FollowRequest) (*pb.Follo
 }
 
 func (srv *Server) Unfollow(ctx context.Context, req *pb.FollowRequest) (*pb.FollowReply, error) {
-	stmt, err := database.DB.Prepare("DELETE FROM Following WHERE Username = ? AND Username = ?")
+	stmt, err := database.DB.Prepare("DELETE FROM Following WHERE Username = ? AND Followeename = ?")
 	if err != nil {
 		log.Fatal(err)
 	}

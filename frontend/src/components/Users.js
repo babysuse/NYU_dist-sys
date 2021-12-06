@@ -11,10 +11,11 @@ class Users extends React.Component {
             following: [],
         }
 
-        this.request = this.request.bind(this);
+        this.getRequest = this.getRequest.bind(this);
+        this.followRequest = this.followRequest.bind(this);
     }
 
-    request = async (token, uri) => {
+    getRequest = async (token, uri) => {
         try {
             let response = await fetch(uri, {
                 method: 'GET',
@@ -29,9 +30,31 @@ class Users extends React.Component {
         }
     }
 
+    followRequest = (event) => {
+        fetch('http://localhost:16008/follow', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                cookie: `session_token=${this.props.token}`,
+            },
+            body: JSON.stringify({
+                'username': event.target.getAttribute('name'),
+                'unfollowing': event.target.innerHTML === 'Unfollow',
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.setState({ following: data });
+        })
+        .catch((err) => {
+            console.log(err);
+        })
+    }
+
     async componentDidMount() {
-        const fp1 = this.request(this.props.token, 'http://localhost:16008/users');
-        const fp2 = this.request(this.props.token, 'http://localhost:16008/following');
+        const fp1 = this.getRequest(this.props.token, 'http://localhost:16008/get_users');
+        const fp2 = this.getRequest(this.props.token, 'http://localhost:16008/get_following');
         const data = await Promise.all([fp1, fp2])
         const users = data[0];
         const following = data[1];
@@ -52,8 +75,16 @@ class Users extends React.Component {
                                             <h4>{ u }</h4>
                                         </Col>
                                         <Col sm={12} md={6} className="text-md-left">
-                                            <Button disabled={ u === this.props.username }>
-                                                { this.state.following.includes(u) ? "Follow" : "Unfollow" }
+                                            <Button
+                                                key={u}
+                                                name={u}
+                                                onClick={ this.followRequest }
+                                                disabled={ u === this.props.username }
+                                            >
+                                                { this.state.following &&
+                                                  this.state.following.includes(u) ||
+                                                  u === this.props.username ?
+                                                    "Unfollow" : "Follow" }
                                             </Button>
                                         </Col>
                                     </Row>

@@ -13,7 +13,7 @@ class Home extends React.Component {
     }
 
     getPosts = (token) => {
-        fetch('http://localhost:16008/posts', {
+        fetch('http://localhost:16008/get_posts', {
             method: 'GET',
             credentials: 'include',
             headers: {

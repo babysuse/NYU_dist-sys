@@ -64,6 +64,53 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(posts)
 }
 
+type FollowReq struct {
+	Username    string `json:"username"`
+	Unfollowing bool   `json:"unfollowing"`
+}
+
+func Follow(w http.ResponseWriter, r *http.Request) {
+	username := "follower"
+	// username := _Authenticate(&w, r)
+	// if len(username) == 0 {
+	// 	return
+	// }
+
+	// decode request body
+	var following FollowReq
+	err := json.NewDecoder(r.Body).Decode(&following)
+	if err != nil {
+		log.Printf("Invalid body format")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// set up RPC client
+	conn, err := grpc.Dial(UserSrvAddr, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+	client := userpb.NewUserServiceClient(conn)
+
+	log.Printf("following %v", following)
+	// contact RPC server
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if following.Unfollowing {
+		_, err = client.Unfollow(ctx, &userpb.FollowRequest{Username: username, Followeename: following.Username})
+	} else {
+		_, err = client.Follow(ctx, &userpb.FollowRequest{Username: username, Followeename: following.Username})
+	}
+	if err != nil {
+		log.Fatalf("failed to follow: %v", err)
+	}
+
+	// return the lastest following status
+	followees := _GetFollowee(username)
+	json.NewEncoder(w).Encode(followees)
+}
+
 func GetFollowees(w http.ResponseWriter, r *http.Request) {
 	username := _Authenticate(&w, r)
 	if len(username) == 0 {
