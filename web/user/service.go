@@ -66,6 +66,28 @@ func (srv *Server) GetFollowee(ctx context.Context, req *pb.GetFolloweeRequest) 
 	return &resp, nil
 }
 
+func (srv *Server) GetUsers(ctx context.Context, in *pb.GetFolloweeRequest) (*pb.GetFolloweeResponse, error) {
+	rows, err := database.DB.Query(`
+		SELECT Username
+		FROM Users
+	`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	var resp pb.GetFolloweeResponse
+	for rows.Next() {
+		var user pb.User
+		err := rows.Scan(&user.Username)
+		if err != nil {
+			log.Fatal(err)
+		}
+		resp.Followees = append(resp.Followees, &user)
+	}
+	return &resp, nil
+}
+
 func NewUserServiceServer() {
 	go func() {
 		bind, err := net.Listen("tcp", port)

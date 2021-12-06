@@ -69,18 +69,15 @@ func (srv *Server) Login(ctx context.Context, acc *pb.Account) (*pb.Token, error
 	}
 
 	// authenticate
-	log.Println("authenticating")
 	if !CheckPasswordHash(acc.Password, hashedPassword) {
 		return &pb.Token{}, &autherr.WrongAuth{}
 	}
 
 	// generate token
-	log.Println("generating token")
 	token, err := jwt.GenerateToken(acc.Username)
 	if err != nil {
 		return &pb.Token{}, err
 	}
-	log.Printf("%s logged in\n", acc.Username)
 	return &pb.Token{Token: token}, nil
 }
 

@@ -46,12 +46,15 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", Login)
 	mux.HandleFunc("/signup", Signup)
-	// mux.HandleFunc("/posts", Posts)
-	// mux.HandleFunc("/users", Users)
+	mux.HandleFunc("/posts", GetPosts)
+	mux.HandleFunc("/users", GetUsers)
+	mux.HandleFunc("/following", GetFollowees)
 	// mux.HandleFunc("/createpost", CreatePost)
 	corsConfig := cors.New(cors.Options{
+		AllowedHeaders:   []string{"Content-Type", "Cookies", "Origin"},
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowCredentials: true,
+		// Debug:            true,
 	})
 	corsHandler := corsConfig.Handler(mux)
 	log.Printf("Web server listening at http://localhost:%s/", port)

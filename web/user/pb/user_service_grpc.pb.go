@@ -21,6 +21,7 @@ type UserServiceClient interface {
 	Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowReply, error)
 	Unfollow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowReply, error)
 	GetFollowee(ctx context.Context, in *GetFolloweeRequest, opts ...grpc.CallOption) (*GetFolloweeResponse, error)
+	GetUsers(ctx context.Context, in *GetFolloweeRequest, opts ...grpc.CallOption) (*GetFolloweeResponse, error)
 }
 
 type userServiceClient struct {
@@ -58,6 +59,15 @@ func (c *userServiceClient) GetFollowee(ctx context.Context, in *GetFolloweeRequ
 	return out, nil
 }
 
+func (c *userServiceClient) GetUsers(ctx context.Context, in *GetFolloweeRequest, opts ...grpc.CallOption) (*GetFolloweeResponse, error) {
+	out := new(GetFolloweeResponse)
+	err := c.cc.Invoke(ctx, "/pb.UserService/GetUsers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -65,6 +75,7 @@ type UserServiceServer interface {
 	Follow(context.Context, *FollowRequest) (*FollowReply, error)
 	Unfollow(context.Context, *FollowRequest) (*FollowReply, error)
 	GetFollowee(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error)
+	GetUsers(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -80,6 +91,9 @@ func (UnimplementedUserServiceServer) Unfollow(context.Context, *FollowRequest) 
 }
 func (UnimplementedUserServiceServer) GetFollowee(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFollowee not implemented")
+}
+func (UnimplementedUserServiceServer) GetUsers(context.Context, *GetFolloweeRequest) (*GetFolloweeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -148,6 +162,24 @@ func _UserService_GetFollowee_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFolloweeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.UserService/GetUsers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUsers(ctx, req.(*GetFolloweeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -167,7 +199,11 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetFollowee",
 			Handler:    _UserService_GetFollowee_Handler,
 		},
+		{
+			MethodName: "GetUsers",
+			Handler:    _UserService_GetUsers_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "user/pb/user_service.proto",
+	Metadata: "web/user/pb/user_service.proto",
 }

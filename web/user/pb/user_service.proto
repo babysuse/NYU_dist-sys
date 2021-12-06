@@ -7,6 +7,7 @@ service UserService {
     rpc Follow (FollowRequest) returns (FollowReply) {}
     rpc Unfollow (FollowRequest) returns (FollowReply) {}
     rpc GetFollowee (GetFolloweeRequest) returns (GetFolloweeResponse) {}
+    rpc GetUsers (GetFolloweeRequest) returns (GetFolloweeResponse) {}
 }
 
 message FollowRequest {
