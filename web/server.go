@@ -46,9 +46,10 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", Login)
 	mux.HandleFunc("/signup", Signup)
-	mux.HandleFunc("/posts", GetPosts)
-	mux.HandleFunc("/users", GetUsers)
-	mux.HandleFunc("/following", GetFollowees)
+	mux.HandleFunc("/get_posts", GetPosts)
+	mux.HandleFunc("/get_users", GetUsers)
+	mux.HandleFunc("/get_following", GetFollowees)
+	mux.HandleFunc("/follow", Follow)
 	// mux.HandleFunc("/createpost", CreatePost)
 	corsConfig := cors.New(cors.Options{
 		AllowedHeaders:   []string{"Content-Type", "Cookies", "Origin"},
