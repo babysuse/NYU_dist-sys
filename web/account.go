@@ -18,7 +18,6 @@ type Credentials struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	// decode request
 	var cred Credentials
 	err := json.NewDecoder(r.Body).Decode(&cred)
