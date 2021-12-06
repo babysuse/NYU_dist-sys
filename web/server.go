@@ -5,21 +5,22 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-
 	//"github.com/go-chi/chi"
 	//"github.com/os3224/final-project-0b5a2e16-babysuse/internal/auth"
 
-	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/auth"
 	database "github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/db/migrations/mysql"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/account"
-	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph"
-	"github.com/os3224/final-project-0b5a2e16-babysuse/web/graph/generated"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/post"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/user"
+	"github.com/rs/cors"
 )
 
-const defaultPort = "16008"
+const (
+	defaultPort    = "16008"
+	AccountSrvAddr = "localhost:16018"
+	UserSrvAddr    = "localhost:16028"
+	PostSrvAddr    = "localhost:16038"
+)
 
 func main() {
 	port := os.Getenv("PORT")
@@ -37,9 +38,22 @@ func main() {
 	post.NewPostServiceServer()
 
 	// set up web server
-	middleware := auth.Middleware()
-	server := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-	http.Handle("/query", middleware(server))
-	log.Printf("GraphQL server listening at http://localhost:%s/", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	// middleware := auth.Middleware()
+	// server := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	// http.Handle("/query", middleware(server))
+	// log.Printf("GraphQL server listening at http://localhost:%s/", port)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/login", Login)
+	mux.HandleFunc("/signup", Signup)
+	// mux.HandleFunc("/posts", Posts)
+	// mux.HandleFunc("/users", Users)
+	// mux.HandleFunc("/createpost", CreatePost)
+	corsConfig := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowCredentials: true,
+	})
+	corsHandler := corsConfig.Handler(mux)
+	log.Printf("Web server listening at http://localhost:%s/", port)
+	log.Fatal(http.ListenAndServe(":"+port, corsHandler))
 }
