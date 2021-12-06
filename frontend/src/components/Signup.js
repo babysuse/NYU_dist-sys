@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Button, Row, Col } from 'react-bootstrap';
+import { Form, Button, Row } from 'react-bootstrap';
 import Cookies from 'js-cookie';
 
 // TODO: signup error (username being signed up)
@@ -33,6 +33,7 @@ const Signup = (props) => {
         })
 
         props.setToken(Cookies.get('session_token'));
+        props.setUsername(username);
         navigate('/');
     }
 

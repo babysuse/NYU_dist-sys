@@ -44,6 +44,7 @@ const LoginForm = (props) => {
         })
 
         props.setToken(Cookies.get('session_token'));
+        props.setUsername(username);
         navigate('/');
     }
 
@@ -81,7 +82,7 @@ const Login = (props) => {
     return (
         <div className="Login mt-5">
             <Col md={{ span: 6, offset: 3 }}>
-                <LoginForm setToken={props.setToken} />
+                <LoginForm setToken={props.setToken} setUsername={props.setUsername} />
             </Col>
         </div>
     )
