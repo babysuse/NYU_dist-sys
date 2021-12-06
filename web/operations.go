@@ -18,12 +18,6 @@ type Post struct {
 	Author string `json:"author"`
 }
 
-type GetUserResp struct {
-	me        string   `json:"me"`
-	followees []string `json:"followees"`
-	users     []string `json:"users"`
-}
-
 func GetPosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	username := _Authenticate(&w, r)
@@ -70,11 +64,10 @@ type FollowReq struct {
 }
 
 func Follow(w http.ResponseWriter, r *http.Request) {
-	username := "follower"
-	// username := _Authenticate(&w, r)
-	// if len(username) == 0 {
-	// 	return
-	// }
+	username := _Authenticate(&w, r)
+	if len(username) == 0 {
+		return
+	}
 
 	// decode request body
 	var following FollowReq
@@ -93,7 +86,6 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	client := userpb.NewUserServiceClient(conn)
 
-	log.Printf("following %v", following)
 	// contact RPC server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
