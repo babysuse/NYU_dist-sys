@@ -19,12 +19,10 @@ type Post struct {
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	username := _Authenticate(&w, r)
 	if len(username) == 0 {
 		return
 	}
-
 	log.Printf("Getting posts")
 	// get all followee (including self)
 	followees := _GetFollowee(username)
@@ -58,9 +56,40 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(posts)
 }
 
-type FollowReq struct {
-	Username    string `json:"username"`
-	Unfollowing bool   `json:"unfollowing"`
+func CreatePost(w http.ResponseWriter, r *http.Request) {
+	username := _Authenticate(&w, r)
+	if len(username) == 0 {
+		return
+	}
+
+	// decode request body
+	var createReq struct {
+		Text string `json:"text"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&createReq)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	log.Printf("Creating posts: %v", createReq.Text)
+
+	// set up RPC client
+	conn, err := grpc.Dial(PostSrvAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+	client := postpb.NewPostServiceClient(conn)
+
+	// contact RPC server
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	_, err = client.CreatePost(ctx, &postpb.CreatePostRequest{Text: createReq.Text, Author: username})
+	if err != nil {
+		log.Fatalf("failed to create post: %v", err)
+	}
+
+	// status code 200 indicate successful operation
 }
 
 func Follow(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +99,10 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// decode request body
-	var following FollowReq
+	var following struct {
+		Username    string `json:"username"`
+		Unfollowing bool   `json:"unfollowing"`
+	}
 	err := json.NewDecoder(r.Body).Decode(&following)
 	if err != nil {
 		log.Printf("Invalid body format")

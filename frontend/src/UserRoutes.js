@@ -8,7 +8,10 @@ import NotFound from './components/NotFound';
 const UserRoutes = (props) => {
     return (
         <Routes>
-            <Route path="/" element={<Home token={props.token} />} />
+            <Route path="/" element={<Home
+                token={props.token}
+                username={props.username}
+            />} />
             <Route path="/login" element={<Login
                 setToken={props.setToken}
                 setUsername={props.setUsername}

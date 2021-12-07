@@ -50,7 +50,7 @@ func main() {
 	mux.HandleFunc("/get_users", GetUsers)
 	mux.HandleFunc("/get_following", GetFollowees)
 	mux.HandleFunc("/follow", Follow)
-	// mux.HandleFunc("/createpost", CreatePost)
+	mux.HandleFunc("/createpost", CreatePost)
 	corsConfig := cors.New(cors.Options{
 		AllowedHeaders:   []string{"Content-Type", "Cookies", "Origin"},
 		AllowedOrigins:   []string{"http://localhost:3000"},

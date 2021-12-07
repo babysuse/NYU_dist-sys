@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate } from 'react-router-dom';
-import { Card } from "react-bootstrap";
+import { Card, Row } from "react-bootstrap";
+import ToggleCreateForm from "./ToggleCreateForm";
 
 class Home extends React.Component {
     constructor (props) {
@@ -23,6 +24,7 @@ class Home extends React.Component {
         .then(response => response.json())
         .then(data => this.setState({posts: data}))
         .catch(err => console.log(err));
+        // { author: ..., text: ... }
     }
 
     componentDidMount() {
@@ -44,6 +46,13 @@ class Home extends React.Component {
                             </Card>
                         ))
                     }
+                    <Row className="justify-content-center my-3">
+                        <ToggleCreateForm
+                            token={this.props.token}
+                            username={this.props.username}
+                            pushPost={(p) => this.setState({ posts: [...this.state.posts, p] })}
+                        />
+                    </Row>
                 </div>
             );
         } else {
