@@ -67,7 +67,7 @@ class Users extends React.Component {
                 <div className="Users text-center mt-5">
                     <h1>Users</h1>
                     {
-                        this.state.users.map(u => (
+                        this.state.users && this.state.users.map(u => (
                             <Card>
                                 <Card.Body>
                                     <Row>
