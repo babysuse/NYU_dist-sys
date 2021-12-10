@@ -23,6 +23,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	if len(username) == 0 {
 		return
 	}
+
 	log.Printf("Getting posts")
 	// get all followee (including self)
 	followees := _GetFollowee(username)
@@ -122,14 +123,17 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if following.Unfollowing {
+		log.Printf("Unfollowing")
 		_, err = client.Unfollow(ctx, &userpb.FollowRequest{Username: username, Followeename: following.Username})
 	} else {
+		log.Printf("Following")
 		_, err = client.Follow(ctx, &userpb.FollowRequest{Username: username, Followeename: following.Username})
 	}
 	if err != nil {
 		log.Fatalf("failed to follow: %v", err)
 	}
 
+	time.Sleep(300 * time.Millisecond)
 	// return the lastest following status
 	followees := _GetFollowee(username)
 	json.NewEncoder(w).Encode(followees)

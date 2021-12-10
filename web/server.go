@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"os/exec"
-	"strconv"
 
 	"net/http"
 	"os"
@@ -36,7 +34,7 @@ func main() {
 	// database.InitDB()
 	// database.Migrate()
 
-	raft := "internal/pkg/raft/src/go.etcd.io/etcd/contrib/raftexample/raftexample"
+	// raft := "internal/pkg/raft/src/go.etcd.io/etcd/contrib/raftexample/raftexample"
 	cluster := ""
 	for _, port := range _rafrSrvPort {
 		cluster += "http://127.0.0.1:" + port + ","
@@ -44,15 +42,15 @@ func main() {
 	cluster = cluster[:len(cluster)-1]
 
 	// set up raft cluster
-	for i, port := range raftSrvPort {
-		go func(id, cluster, port string) {
-			// internal/pkg/raft/src/go.etcd.io/etcd/contrib/raftexample/raftexample --id 1 --cluster http://127.0.0.1:12345 --port 12346
-			err := exec.Command(raft, "--id", id, "--cluster", cluster, "--port", port).Run()
-			if err != nil {
-				log.Fatalf("fail to launch raft node %s: %s", id, err)
-			}
-		}(strconv.Itoa(i+1), cluster, port)
-	}
+	// for i, port := range raftSrvPort {
+	// 	go func(id, cluster, port string) {
+	// 		// internal/pkg/raft/src/go.etcd.io/etcd/contrib/raftexample/raftexample --id 1 --cluster http://127.0.0.1:12345 --port 12346
+	// 		err := exec.Command(raft, "--id", id, "--cluster", cluster, "--port", port).Run()
+	// 		if err != nil {
+	// 			log.Fatalf("fail to launch raft node %s: %s", id, err)
+	// 		}
+	// 	}(strconv.Itoa(i+1), cluster, port)
+	// }
 
 	// set up RPC server
 	account.NewAccountServiceServer()

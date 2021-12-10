@@ -1,15 +1,14 @@
 package post
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 
-	database "github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/db/migrations/mysql"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/post/pb"
 	"google.golang.org/grpc"
 )
@@ -24,21 +23,38 @@ type Server struct {
 
 func (srv *Server) CreatePost(ctx context.Context, post *pb.CreatePostRequest) (*pb.CreatePostResponse, error) {
 	// prepare SQL
-	stmt, err := database.DB.Prepare("INSERT INTO Posts(Text, Author) Values (?, ?)")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// stmt, err := database.DB.Prepare("INSERT INTO Posts(Text, Author) Values (?, ?)")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// insert data
-	result, err := stmt.Exec(post.Text, post.Author)
+	// result, err := stmt.Exec(post.Text, post.Author)
+	// if err != nil {
+	// 	return &pb.CreatePostResponse{}, err
+	// }
+	// id, err := result.LastInsertId()
+	// if err != nil {
+	// 	return &pb.CreatePostResponse{}, err
+	// }
+	// return &pb.CreatePostResponse{Post: &pb.Post{ID: strconv.FormatInt(id, 10), Text: post.Text, Author: post.Author}}, nil
+
+	// Put to raft cluster
+	client := http.Client{}
+	data, err := json.Marshal(post.Text)
 	if err != nil {
-		return &pb.CreatePostResponse{}, err
+		log.Fatalf("Failed to Marshal: %v", err)
 	}
-	id, err := result.LastInsertId()
+	req, err := http.NewRequest(http.MethodPut, "http://127.0.0.1:16049/posts/"+post.Author, bytes.NewBuffer(data))
 	if err != nil {
-		return &pb.CreatePostResponse{}, err
+		log.Fatalf("Failed to NewRequest: %v", err)
 	}
-	return &pb.CreatePostResponse{Post: &pb.Post{ID: strconv.FormatInt(id, 10), Text: post.Text, Author: post.Author}}, nil
+	req.Header.Set("Content-Type", "application/json")
+	_, err = client.Do(req)
+	if err != nil {
+		log.Fatalf("Failed to Do request: %v", err)
+	}
+	return &pb.CreatePostResponse{Post: &pb.Post{ID: "0", Text: post.Text, Author: post.Author}}, nil
 }
 
 func (srv *Server) FollowPosts(ctx context.Context, req *pb.PostsRequest) (*pb.PostsResponse, error) {

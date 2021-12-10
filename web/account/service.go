@@ -1,6 +1,7 @@
 package account
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -27,17 +28,32 @@ type Server struct {
 
 func (srv *Server) Signup(ctx context.Context, acc *pb.Account) (*pb.Token, error) {
 	// prepare SQL
-	statement, err := database.DB.Prepare("INSERT INTO Users(Username, Password) VALUES(?, ?)")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// statement, err := database.DB.Prepare("INSERT INTO Users(Username, Password) VALUES(?, ?)")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// insert data
-	hashedPassword, err := HashPassword(acc.Password)
-	_, err = statement.Exec(acc.Username, hashedPassword)
+	// hashedPassword, err := HashPassword(acc.Password)
+	// _, err = statement.Exec(acc.Username, hashedPassword)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return &pb.Token{}, err
+	// }
+
+	// Put to raft cluster
+	client := http.Client{}
+	data, err := json.Marshal(acc.Password)
 	if err != nil {
-		log.Println(err)
-		return &pb.Token{}, err
+		log.Fatalf("Failed to Marshal: %v", err)
+	}
+	req, err := http.NewRequest(http.MethodPut, "http://127.0.0.1:16049/users/"+acc.Username, bytes.NewBuffer(data))
+	if err != nil {
+		log.Fatalf("Failed to NewRequest: %v", err)
+	}
+	_, err = client.Do(req)
+	if err != nil {
+		log.Fatalf("Failed to Do request: %v", err)
 	}
 
 	// generate token
