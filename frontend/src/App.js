@@ -49,8 +49,8 @@ const Navigation = (props) => {
 }
 
 const App = () => {
-    const [token, setToken] = useState('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2Mzg4NzE3NTgsInVzZXJuYW1lIjoiZm9sbG93ZXIifQ.W57J9lDFmUZYJuiO5CFsBBrmTD0QKzUpzM4I9aZsd7A');
-    const [username, setUsername] = useState('follower')
+    const [token, setToken] = useState('');
+    const [username, setUsername] = useState('')
 
     return (
         <div className="App container py-3">
