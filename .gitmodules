@@ -1,0 +1,3 @@
+[submodule "internal/pkg/raft/src/go.etcd.io/etcd"]
+	path = internal/pkg/raft/src/go.etcd.io/etcd
+	url = https://github.com/etcd-io/etcd.git
