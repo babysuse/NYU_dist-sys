@@ -34,7 +34,7 @@ func (srv *Server) Signup(ctx context.Context, acc *pb.Account) (*pb.Token, erro
 	// }
 
 	// insert data
-	// hashedPassword, err := HashPassword(acc.Password)
+	// hashedPassword := HashPassword(acc.Password)
 	// _, err = statement.Exec(acc.Username, hashedPassword)
 	// if err != nil {
 	// 	log.Println(err)
@@ -43,7 +43,8 @@ func (srv *Server) Signup(ctx context.Context, acc *pb.Account) (*pb.Token, erro
 
 	// Put to raft cluster
 	client := http.Client{}
-	data, err := json.Marshal(acc.Password)
+	hashedPassword := HashPassword(acc.Password)
+	data, err := json.Marshal(hashedPassword)
 	if err != nil {
 		log.Fatalf("Failed to Marshal: %v", err)
 	}
@@ -113,9 +114,12 @@ func (srv *Server) Login(ctx context.Context, acc *pb.Account) (*pb.Token, error
 	return &pb.Token{Token: token}, nil
 }
 
-func HashPassword(password string) (string, error) {
+func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 16)
-	return string(bytes), err
+	if err != nil {
+		log.Printf("failed to hash password: %v", err)
+	}
+	return string(bytes)
 }
 
 func CheckPasswordHash(password, hash string) bool {
