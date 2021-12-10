@@ -81,8 +81,8 @@ class Users extends React.Component {
                                                 onClick={ this.followRequest }
                                                 disabled={ u === this.props.username }
                                             >
-                                                { this.state.following &&
-                                                  this.state.following.includes(u) ||
+                                                { (this.state.following &&
+                                                  this.state.following.includes(u)) ||
                                                   u === this.props.username ?
                                                     "Unfollow" : "Follow" }
                                             </Button>

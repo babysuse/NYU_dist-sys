@@ -37,7 +37,7 @@ class Home extends React.Component {
                 <div className="Home text-center mt-5">
                     <h1>Posts</h1>
                     {
-                        this.state.posts.map((p, index) => (
+                        this.state.posts && this.state.posts.map((p, index) => (
                             <Card key={index}>
                                 <Card.Body>
                                     <Card.Title>{ p.author }</Card.Title>
@@ -50,7 +50,13 @@ class Home extends React.Component {
                         <ToggleCreateForm
                             token={this.props.token}
                             username={this.props.username}
-                            pushPost={(p) => this.setState({ posts: [...this.state.posts, p] })}
+                            pushPost={(p) => {
+                                if (this.state.posts) {
+                                    this.setState({ posts: [...this.state.posts, p] })
+                                } else {
+                                    this.setState({ posts: [p] })
+                                }
+                            }}
                         />
                     </Row>
                 </div>
