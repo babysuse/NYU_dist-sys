@@ -2,8 +2,11 @@ package user
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"log"
 	"net"
+	"net/http"
 
 	database "github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/db/migrations/mysql"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/web/user/pb"
@@ -45,44 +48,88 @@ func (srv *Server) Unfollow(ctx context.Context, req *pb.FollowRequest) (*pb.Fol
 }
 
 func (srv *Server) GetFollowee(ctx context.Context, req *pb.GetFolloweeRequest) (*pb.GetFolloweeResponse, error) {
-	rows, err := database.DB.Query(`
-		SELECT Followeename
-		FROM Following
-		WHERE Username = ?`, req.Username)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
+	// prepare SQL
+	// rows, err := database.DB.Query(`
+	// 	SELECT Followeename
+	// 	FROM Following
+	// 	WHERE Username = ?`, req.Username)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer rows.Close()
 
+	// fetch data
+	// var resp pb.GetFolloweeResponse
+	// for rows.Next() {
+	// 	var followee pb.User
+	// 	err := rows.Scan(&followee.Username)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	resp.Followees = append(resp.Followees, &followee)
+	// }
+
+	// get from raft cluster
+	raftResp, err := http.Get("http://127.0.0.1:16049/following/" + req.Username)
+	if err != nil {
+		log.Fatalf("Failed to Get: %v", err)
+	}
+	defer raftResp.Body.Close()
+	bytes, err := io.ReadAll(raftResp.Body)
+	if err != nil {
+		log.Fatalf("Failed to ReadAll: %v", err)
+	}
+	var users []string
+	json.Unmarshal(bytes, &users)
+
+	// prepare response
 	var resp pb.GetFolloweeResponse
-	for rows.Next() {
-		var followee pb.User
-		err := rows.Scan(&followee.Username)
-		if err != nil {
-			log.Fatal(err)
-		}
+	for _, u := range users {
+		followee := pb.User{Username: u}
 		resp.Followees = append(resp.Followees, &followee)
 	}
 	return &resp, nil
 }
 
 func (srv *Server) GetUsers(ctx context.Context, in *pb.GetFolloweeRequest) (*pb.GetFolloweeResponse, error) {
-	rows, err := database.DB.Query(`
-		SELECT Username
-		FROM Users
-	`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
+	// query database
+	// rows, err := database.DB.Query(`
+	// 	SELECT Username
+	// 	FROM Users
+	// `)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer rows.Close()
 
+	// extract data
+	// var resp pb.GetFolloweeResponse
+	// for rows.Next() {
+	// 	var user pb.User
+	// 	err := rows.Scan(&user.Username)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	resp.Followees = append(resp.Followees, &user)
+	// }
+
+	// get from raft cluster
+	raftResp, err := http.Get("http://127.0.0.1:16049/users")
+	if err != nil {
+		log.Fatalf("Failed to Get: %v", err)
+	}
+	defer raftResp.Body.Close()
+	bytes, err := io.ReadAll(raftResp.Body)
+	if err != nil {
+		log.Fatalf("Failed to ReadAll: %v", err)
+	}
+	var users []string
+	json.Unmarshal(bytes, &users)
+
+	// prepare response
 	var resp pb.GetFolloweeResponse
-	for rows.Next() {
-		var user pb.User
-		err := rows.Scan(&user.Username)
-		if err != nil {
-			log.Fatal(err)
-		}
+	for _, u := range users {
+		user := pb.User{Username: u}
 		resp.Followees = append(resp.Followees, &user)
 	}
 	return &resp, nil

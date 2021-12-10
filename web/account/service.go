@@ -3,8 +3,11 @@ package account
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"io"
 	"log"
 	"net"
+	"net/http"
 
 	database "github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/db/migrations/mysql"
 	"github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/jwt"
@@ -48,25 +51,38 @@ func (srv *Server) Signup(ctx context.Context, acc *pb.Account) (*pb.Token, erro
 
 func (srv *Server) Login(ctx context.Context, acc *pb.Account) (*pb.Token, error) {
 	// prepare SQL
-	if err := database.DB.Ping(); err != nil {
-		log.Panic(err)
-	}
-	stmt, err := database.DB.Prepare("SELECT Password FROM Users WHERE Username = ?")
-	if err != nil {
-		log.Fatal(err)
-	}
+	// if err := database.DB.Ping(); err != nil {
+	// 	log.Panic(err)
+	// }
+	// stmt, err := database.DB.Prepare("SELECT Password FROM Users WHERE Username = ?")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// fetch data
-	row := stmt.QueryRow(acc.Username)
-	var hashedPassword string
-	err = row.Scan(&hashedPassword)
+	// row := stmt.QueryRow(acc.Username)
+	// var hashedPassword string
+	// err = row.Scan(&hashedPassword)
+	// if err != nil {
+	// 	if err == sql.ErrNoRows {
+	// 		return &pb.Token{}, &autherr.WrongAuth{}
+	// 	} else {
+	// 		log.Fatal(err)
+	// 	}
+	// }
+
+	// GET from raft clusters
+	resp, err := http.Get("http://127.0.0.1:16049/users/" + acc.Username)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return &pb.Token{}, &autherr.WrongAuth{}
-		} else {
-			log.Fatal(err)
-		}
+		log.Fatalf("Failed to Get: %v", err)
 	}
+	defer resp.Body.Close()
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to ReadAll: %v", err)
+	}
+	var hashedPassword string
+	json.Unmarshal(bytes, &hashedPassword)
 
 	// authenticate
 	if !CheckPasswordHash(acc.Password, hashedPassword) {

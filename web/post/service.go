@@ -2,8 +2,11 @@ package post
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"strconv"
 
 	database "github.com/os3224/final-project-0b5a2e16-babysuse/internal/pkg/db/migrations/mysql"
@@ -40,25 +43,60 @@ func (srv *Server) CreatePost(ctx context.Context, post *pb.CreatePostRequest) (
 
 func (srv *Server) FollowPosts(ctx context.Context, req *pb.PostsRequest) (*pb.PostsResponse, error) {
 	// fetch data (via prepared SQL internally)
-	rows, err := database.DB.Query(`
-		SELECT ID, Text, Author
-		FROM Posts
-		WHERE Author = ?
-	`, req.Follower)
-	if err != nil {
-		return &pb.PostsResponse{}, err
-	}
-	defer rows.Close()
+	// rows, err := database.DB.Query(`
+	// 	SELECT ID, Text, Author
+	// 	FROM Posts
+	// 	WHERE Author = ?
+	// `, req.Follower)
+	// if err != nil {
+	// 	return &pb.PostsResponse{}, err
+	// }
+	// defer rows.Close()
 
 	// extract data
+	// var resp pb.PostsResponse
+	// for rows.Next() {
+	// 	var post pb.Post
+	// 	err := rows.Scan(&post.ID, &post.Text, &post.Author)
+	// 	if err != nil {
+	// 		return &pb.PostsResponse{}, err
+	// 	}
+	// 	resp.Posts = append(resp.Posts, &post)
+	// }
+
+	// get followees from raft cluster
+	raftRespFollows, err := http.Get("http://127.0.0.1:16049/following/" + req.Follower)
+	if err != nil {
+		log.Fatalf("Failed to Get: %v", err)
+	}
+	defer raftRespFollows.Body.Close()
+	bytes, err := io.ReadAll(raftRespFollows.Body)
+	if err != nil {
+		log.Fatalf("Failed to ReadAll: %v", err)
+	}
+	var users []string
+	json.Unmarshal(bytes, &users)
+	log.Printf("following %v", users)
+
+	// get posts from raft cluster
 	var resp pb.PostsResponse
-	for rows.Next() {
-		var post pb.Post
-		err := rows.Scan(&post.ID, &post.Text, &post.Author)
+	for _, u := range users {
+		raftRespPosts, err := http.Get("http://127.0.0.1:16049/posts/" + u)
 		if err != nil {
-			return &pb.PostsResponse{}, err
+			log.Fatalf("Failed to Get: %v", err)
 		}
-		resp.Posts = append(resp.Posts, &post)
+		defer raftRespPosts.Body.Close()
+		bytes, err := io.ReadAll(raftRespPosts.Body)
+		if err != nil {
+			log.Fatalf("Failed to ReadAll: %v", err)
+		}
+		var posts []string
+		json.Unmarshal(bytes, &posts)
+		log.Printf("%s's posts: %v", u, posts)
+		// prepare response
+		for _, text := range posts {
+			resp.Posts = append(resp.Posts, &pb.Post{Text: text, Author: u})
+		}
 	}
 	return &resp, nil
 }
