@@ -27,6 +27,18 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := _Login(cred.Username, cred.Password)
+
+	// set cookie with expiry time of 10 minutes
+	http.SetCookie(w, &http.Cookie{
+		Name:    "session_token",
+		Value:   token,
+		Expires: time.Now().Add(10 * time.Minute),
+	})
+	log.Printf("%s logged in", cred.Username)
+}
+
+func _Login(username, password string) string {
 	// set up RPC client
 	conn, err := grpc.Dial(AccountSrvAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -38,23 +50,16 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// contact RPC server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	resp, err := client.Login(ctx, &accountpb.Account{Username: cred.Username, Password: cred.Password})
+	resp, err := client.Login(ctx, &accountpb.Account{Username: username, Password: password})
 	if err != nil {
 		_, wrongtype := err.(*autherr.WrongAuth)
 		// wrong password
 		if !wrongtype {
-			return
+			return ""
 		}
 		log.Fatalf("failed to login: %v", err)
 	}
-
-	// set cookie with expiry time of 10 minutes
-	http.SetCookie(w, &http.Cookie{
-		Name:    "session_token",
-		Value:   resp.Token,
-		Expires: time.Now().Add(10 * time.Minute),
-	})
-	log.Printf("%s logged in", cred.Username)
+	return resp.Token
 }
 
 func Signup(w http.ResponseWriter, r *http.Request) {
@@ -65,8 +70,19 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Printf("%s logging in", cred.Username)
+	log.Printf("%s signing up", cred.Username)
+	token := _Signup(cred.Username, cred.Password)
 
+	// set cookie with expiry time of a day
+	http.SetCookie(w, &http.Cookie{
+		Name:    "session_token",
+		Value:   token,
+		Expires: time.Now().Add(24 * time.Hour),
+	})
+	log.Printf("%s signed up", cred.Username)
+}
+
+func _Signup(username, password string) string {
 	// set up RPC client
 	conn, err := grpc.Dial(AccountSrvAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -78,16 +94,10 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	// contact RPC server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	resp, err := client.Signup(ctx, &accountpb.Account{Username: cred.Username, Password: cred.Password})
+	resp, err := client.Signup(ctx, &accountpb.Account{Username: username, Password: password})
 	if err != nil {
 		log.Fatalf("failed to signup: %v", err)
 	}
 
-	// set cookie with expiry time of a day
-	http.SetCookie(w, &http.Cookie{
-		Name:    "session_token",
-		Value:   resp.Token,
-		Expires: time.Now().Add(24 * time.Hour),
-	})
-	log.Printf("%s signed up", cred.Username)
+	return resp.Token
 }

@@ -25,6 +25,11 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Getting posts")
+	posts := _GetPosts(username)
+	json.NewEncoder(w).Encode(posts)
+}
+
+func _GetPosts(username string) []Post {
 	// get all followee (including self)
 	followees := _GetFollowee(username)
 	followees = append(followees, username)
@@ -54,7 +59,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
-	json.NewEncoder(w).Encode(posts)
+	return posts
 }
 
 func CreatePost(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +67,6 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	if len(username) == 0 {
 		return
 	}
-
 	// decode request body
 	var createReq struct {
 		Text string `json:"text"`
@@ -74,6 +78,11 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Creating posts: %v", createReq.Text)
 
+	_CreatePost(username, createReq.Text)
+	// status code 200 indicate successful operation
+}
+
+func _CreatePost(username, text string) {
 	// set up RPC client
 	conn, err := grpc.Dial(PostSrvAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -85,12 +94,10 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	// contact RPC server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	_, err = client.CreatePost(ctx, &postpb.CreatePostRequest{Text: createReq.Text, Author: username})
+	_, err = client.CreatePost(ctx, &postpb.CreatePostRequest{Text: text, Author: username})
 	if err != nil {
 		log.Fatalf("failed to create post: %v", err)
 	}
-
-	// status code 200 indicate successful operation
 }
 
 func Follow(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +118,21 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if following.Unfollowing {
+		log.Printf("Unfollowing")
+	} else {
+		log.Printf("Following")
+	}
+	_Follow(username, following.Username, following.Unfollowing)
+
+	// wait for raft cluster to commit the update
+	time.Sleep(300 * time.Millisecond)
+	// return the lastest following status
+	followees := _GetFollowee(username)
+	json.NewEncoder(w).Encode(followees)
+}
+
+func _Follow(username, followingName string, unfollow bool) {
 	// set up RPC client
 	conn, err := grpc.Dial(UserSrvAddr, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -122,21 +144,14 @@ func Follow(w http.ResponseWriter, r *http.Request) {
 	// contact RPC server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if following.Unfollowing {
-		log.Printf("Unfollowing")
-		_, err = client.Unfollow(ctx, &userpb.FollowRequest{Username: username, Followeename: following.Username})
+	if unfollow {
+		_, err = client.Unfollow(ctx, &userpb.FollowRequest{Username: username, Followeename: followingName})
 	} else {
-		log.Printf("Following")
-		_, err = client.Follow(ctx, &userpb.FollowRequest{Username: username, Followeename: following.Username})
+		_, err = client.Follow(ctx, &userpb.FollowRequest{Username: username, Followeename: followingName})
 	}
 	if err != nil {
 		log.Fatalf("failed to follow: %v", err)
 	}
-
-	time.Sleep(300 * time.Millisecond)
-	// return the lastest following status
-	followees := _GetFollowee(username)
-	json.NewEncoder(w).Encode(followees)
 }
 
 func GetFollowees(w http.ResponseWriter, r *http.Request) {
@@ -149,60 +164,6 @@ func GetFollowees(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Getting following")
 	followees := _GetFollowee(username)
 	json.NewEncoder(w).Encode(followees)
-}
-
-func GetUsers(w http.ResponseWriter, r *http.Request) {
-	username := _Authenticate(&w, r)
-	if len(username) == 0 {
-		return
-	}
-
-	// set up RPC client
-	conn, err := grpc.Dial(UserSrvAddr, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
-	defer conn.Close()
-	client := userpb.NewUserServiceClient(conn)
-
-	// contact RPC server
-	log.Printf("Getting users")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	rpcResp, err := client.GetUsers(ctx, &userpb.GetFolloweeRequest{Username: username})
-	if err != nil {
-		log.Fatalf("failed to get followee: %v", err)
-	}
-
-	// extract data
-	var users []string
-	for _, followee := range rpcResp.Followees {
-		users = append(users, followee.Username)
-	}
-	json.NewEncoder(w).Encode(users)
-}
-
-func _Authenticate(w *http.ResponseWriter, r *http.Request) string {
-	log.Printf("Authenticating")
-	// authenticate user
-	cookie, err := r.Cookie("session_token")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			(*w).WriteHeader(http.StatusUnauthorized)
-			return ""
-		}
-		(*w).WriteHeader(http.StatusBadRequest)
-		return ""
-	}
-
-	// validate jwt token
-	username, err := jwt.ParseToken(cookie.Value)
-	if err != nil {
-		http.Error(*w, "Invalid cookie", http.StatusUnauthorized)
-		return ""
-	}
-
-	return username
 }
 
 func _GetFollowee(username string) []string {
@@ -228,4 +189,63 @@ func _GetFollowee(username string) []string {
 		followees = append(followees, followee.Username)
 	}
 	return followees
+}
+
+func GetUsers(w http.ResponseWriter, r *http.Request) {
+	username := _Authenticate(&w, r)
+	if len(username) == 0 {
+		return
+	}
+
+	log.Printf("Getting users")
+	users := _GetUsers(username)
+	json.NewEncoder(w).Encode(users)
+}
+
+func _GetUsers(username string) []string {
+	// set up RPC client
+	conn, err := grpc.Dial(UserSrvAddr, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+	client := userpb.NewUserServiceClient(conn)
+
+	// contact RPC server
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	rpcResp, err := client.GetUsers(ctx, &userpb.GetFolloweeRequest{Username: username})
+	if err != nil {
+		log.Fatalf("failed to get followee: %v", err)
+	}
+
+	// extract data
+	var users []string
+	for _, followee := range rpcResp.Followees {
+		users = append(users, followee.Username)
+	}
+	return users
+}
+
+func _Authenticate(w *http.ResponseWriter, r *http.Request) string {
+	log.Printf("Authenticating")
+	// authenticate user
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			(*w).WriteHeader(http.StatusUnauthorized)
+			return ""
+		}
+		(*w).WriteHeader(http.StatusBadRequest)
+		return ""
+	}
+
+	// validate jwt token
+	username, err := jwt.ParseToken(cookie.Value)
+	if err != nil {
+		http.Error(*w, "Invalid cookie", http.StatusUnauthorized)
+		return ""
+	}
+
+	return username
 }
