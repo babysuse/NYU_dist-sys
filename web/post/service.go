@@ -80,40 +80,25 @@ func (srv *Server) FollowPosts(ctx context.Context, req *pb.PostsRequest) (*pb.P
 	// 	resp.Posts = append(resp.Posts, &post)
 	// }
 
-	// get followees from raft cluster
-	raftRespFollows, err := http.Get("http://127.0.0.1:16049/following/" + req.Follower)
+	// get posts from raft cluster
+	var resp pb.PostsResponse
+	raftRespPosts, err := http.Get("http://127.0.0.1:16049/posts/" + req.Follower)
 	if err != nil {
 		log.Fatalf("Failed to Get: %v", err)
 	}
-	defer raftRespFollows.Body.Close()
-	bytes, err := io.ReadAll(raftRespFollows.Body)
+	defer raftRespPosts.Body.Close()
+	bytes, err := io.ReadAll(raftRespPosts.Body)
 	if err != nil {
 		log.Fatalf("Failed to ReadAll: %v", err)
 	}
-	var users []string
-	json.Unmarshal(bytes, &users)
-	log.Printf("following %v", users)
-
-	// get posts from raft cluster
-	var resp pb.PostsResponse
-	for _, u := range users {
-		raftRespPosts, err := http.Get("http://127.0.0.1:16049/posts/" + u)
-		if err != nil {
-			log.Fatalf("Failed to Get: %v", err)
-		}
-		defer raftRespPosts.Body.Close()
-		bytes, err := io.ReadAll(raftRespPosts.Body)
-		if err != nil {
-			log.Fatalf("Failed to ReadAll: %v", err)
-		}
-		var posts []string
-		json.Unmarshal(bytes, &posts)
-		log.Printf("%s's posts: %v", u, posts)
-		// prepare response
-		for _, text := range posts {
-			resp.Posts = append(resp.Posts, &pb.Post{Text: text, Author: u})
-		}
+	var posts []string
+	json.Unmarshal(bytes, &posts)
+	log.Printf("%s's posts: %v", req.Follower, posts)
+	// prepare response
+	for _, text := range posts {
+		resp.Posts = append(resp.Posts, &pb.Post{Text: text, Author: req.Follower})
 	}
+
 	return &resp, nil
 }
 
