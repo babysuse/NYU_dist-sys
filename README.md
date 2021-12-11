@@ -1,7 +1,8 @@
 # Topics
 
-## Group member:
+## Group member
 Yusung Lin (me)
+
 
 ## Architecture
 
@@ -56,6 +57,7 @@ project_root/
         operator.go   # http handlers
         *_test.go     # go test script
         gqlgen.yml    # (obsolete)
+    raft
 ```
 
 I remove the *cmd/* directory because syntax of scripting language depenps heavily on the shell being use where the defaut shell for Ubuntu is *bash*, *zsh* for macOS, which I'm using *fish* which is less frequently used. Therefore, I use makefile to execute instead.
@@ -72,12 +74,21 @@ make stop-srv  # stop web server
 
 Also, the obsolete directories regarding graphQL are kept for future research. I gave up on those due to the insufficient understanding and unresolved bugs.
 
+### [etcd/raft](https://github.com/etcd-io/etcd/tree/main/raft)
+* better documented
+* an [etcd/contrib/raftexample](https://github.com/etcd-io/etcd/tree/main/contrib/raftexample) with more straightforward structure and comments
+    * http server
+    * key-value storage
+    * raft server
+
+
 ## Functionality / Features
 * Create account
 * Login system Authentication
 * Follow/unfollow other users
 * Create posts
 * View posts by following users
+
 
 ## Testing
 There are default configuration/state as the raft cluster begins. Therefore, in order to correctly perform the unit test, we have to clear up the previous state and have the web server running.
@@ -94,9 +105,11 @@ make stop-srv
 
 ![](https://i.imgur.com/PlZgsnY.png)
 
+
 ## Replication scenarios
 * when multiple accessing different servers
 * when one server is down
+
 
 ## Manipulating raft cluster
 
@@ -125,6 +138,7 @@ make start-cli
     # terminate another session
     ```
 
+
 ## Problems
 * go build/test failure due to trashed/corrupted package library path/arrangement
 
@@ -149,6 +163,7 @@ make start-cli
 * cors problem
     * curl / postman
 * debugging...
+
 
 ## Learned
     * React / Fetch API
